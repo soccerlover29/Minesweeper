@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper</title>
+  <style>
+    .board {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-gap: 2px;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background-color: #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #aaa;
+      cursor: pointer;
+    }
+    .cell.revealed {
+      background-color: #fff;
+    }
+    .cell.flagged {
+      background-color: yellow;
+    }
+  </style>
+</head>
+<body>
+  <h1>Minesweeper</h1>
+  <div class="board" id="board"></div>
+
+  <script>
+    const boardSize = 10;
+    const mineCount = 20;
+    const board = document.getElementById('board');
+    let boardArray = Array(boardSize).fill().map(() => Array(boardSize).fill(0));
+
+    // Initialize the board
+    function initBoard() {
+      board.innerHTML = '';
+      placeMines();
+      calculateNeighboringMines();
+      generateCells();
+    }
+
+    // Place mines randomly
+    function placeMines() {
+      let minesPlaced = 0;
+      while (minesPlaced < mineCount) {
+        const row = Math.floor(Math.random() * boardSize);
+        const col = Math.floor(Math.random() * boardSize);
+        if (boardArray[row][col] !== 'M') {
+          boardArray[row][col] = 'M';
+          minesPlaced++;
+        }
+      }
+    }
+
+    // Calculate neighboring mines for each cell
+    function calculateNeighboringMines() {
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          if (boardArray[row][col] !== 'M') {
+            let mineCounter = 0;
+            for (let x = -1; x <= 1; x++) {
+              for (let y = -1; y <= 1; y++) {
+                const newRow = row + x;
+                const newCol = col + y;
+                if (boardArray[newRow] && boardArray[newRow][newCol] === 'M') {
+                  mineCounter++;
+                }
+              }
+            }
+            boardArray[row][col] = mineCounter;
+          }
+        }
+      }
+    }
+
+    // Generate the board cells
+    function generateCells() {
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.id = `cell-${row}-${col}`;
+          cell.addEventListener('click', () => revealCell(row, col));
+          cell.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            flagCell(row, col);
+          });
+          board.appendChild(cell);
+        }
+      }
+    }
+
+    // Reveal a cell
+    function revealCell(row, col) {
+      const cell = document.getElementById(`cell-${row}-${col}`);
+      if (cell.classList.contains('revealed') || cell.classList.contains('flagged')) return;
+
+      cell.classList.add('revealed');
+      const value = boardArray[row][col];
+      if (value === 'M') {
+        cell.textContent = '💣';
+        alert('Game Over!');
+        revealAllMines();
+        return;
+      }
+      cell.textContent = value > 0 ? value : '';
+      if (value === 0) {
+        for (let x = -1; x <= 1; x++) {
+          for (let y = -1; y <= 1; y++) {
+            const newRow = row + x;
+            const newCol = col + y;
+            if (boardArray[newRow] && boardArray[newRow][newCol] !== undefined) {
+              revealCell(newRow, newCol);
+            }
+          }
+        }
+      }
+    }
+
+    // Flag a cell
+    function flagCell(row, col) {
+      const cell = document.getElementById(`cell-${row}-${col}`);
+      if (!cell.classList.contains('revealed')) {
+        cell.classList.toggle('flagged');
+      }
+    }
+
+    // Reveal all mines
+    function revealAllMines() {
+      for (let row = 0; row < boardSize; row++) {
+        for (let col = 0; col < boardSize; col++) {
+          if (boardArray[row][col] === 'M') {
+            const cell = document.getElementById(`cell-${row}-${col}`);
+            cell.classList.add('revealed');
+            cell.textContent = '💣';
+          }
+        }
+      }
+    }
+
+    // Start the game
+    initBoard();
+  </script>
+</body>
+</html>
